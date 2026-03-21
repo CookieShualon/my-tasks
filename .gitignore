@@ -1,0 +1,9 @@
+# Binary
+my-tasks
+
+# Go build cache
+*.test
+*.out
+
+# macOS
+.DS_Store
