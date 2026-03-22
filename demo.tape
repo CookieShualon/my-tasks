@@ -35,4 +35,3 @@ Type "buy"
 Sleep 1.5s
 Escape
 Sleep 500ms
-Type "q"
