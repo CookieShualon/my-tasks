@@ -30,6 +30,8 @@ vhs demo.tape
 
 This replaces `demo.gif` in place. The tape is configured at 1300×650 px, font size 22, typing speed 75 ms. The recorded session launches the app, adds two tasks ("Buy groceries", "Read a book"), toggles one done, navigates down and deletes one, then triggers the filter with `/buy`.
 
+After committing the new `demo.gif`, update the image URL in `README.md` to point to the latest commit SHA (e.g. `https://raw.githubusercontent.com/<owner>/my-tasks/<commit-sha>/demo.gif`) to bust GitHub's CDN cache. Using the raw URL pinned to a commit guarantees the updated GIF is shown immediately.
+
 ## Project Structure
 
 ```
