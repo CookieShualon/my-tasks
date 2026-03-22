@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -98,18 +99,46 @@ type todo struct {
 	done  bool
 }
 
-func (t todo) Title() string {
+func (t todo) Title() string       { return t.title }
+func (t todo) Description() string { return "" }
+func (t todo) FilterValue() string { return t.title }
+
+// ── Custom delegate ───────────────────────────────────────────────────────────
+
+type todoDelegate struct{}
+
+func (d todoDelegate) Height() int                             { return 1 }
+func (d todoDelegate) Spacing() int                            { return 0 }
+func (d todoDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
+
+func (d todoDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
+	t, ok := item.(todo)
+	if !ok {
+		return
+	}
+
 	check := checkPendingStyle.Render("○")
-	text := pendingStyle.Render(t.title)
+	title := pendingStyle.Render(t.title)
 	if t.done {
 		check = checkDoneStyle.Render("✓")
-		text = doneStyle.Render(t.title)
+		title = doneStyle.Render(t.title)
 	}
-	return fmt.Sprintf("%s  %s", check, text)
-}
 
-func (t todo) Description() string { return "" }
-func (t todo) FilterValue() string  { return t.title }
+	line := fmt.Sprintf("%s  %s", check, title)
+
+	if index == m.Index() {
+		line = lipgloss.NewStyle().
+			BorderLeft(true).
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.Color("#7C3AED")).
+			PaddingLeft(1).
+			Render(line)
+	} else {
+		line = lipgloss.NewStyle().PaddingLeft(2).Render(line)
+	}
+
+	fmt.Fprint(w, line)
+}
 
 // ── Key bindings ──────────────────────────────────────────────────────────────
 
@@ -175,16 +204,7 @@ func newModel() model {
 
 	items := todosToItems(initial)
 
-	delegate := list.NewDefaultDelegate()
-	delegate.Styles.SelectedTitle = delegate.Styles.SelectedTitle.
-		Foreground(lipgloss.Color("#7C3AED")).
-		BorderLeftForeground(lipgloss.Color("#7C3AED"))
-	delegate.Styles.SelectedDesc = delegate.Styles.SelectedDesc.
-		Foreground(lipgloss.Color("#9F7AEA")).
-		BorderLeftForeground(lipgloss.Color("#7C3AED"))
-	delegate.ShowDescription = false
-
-	l := list.New(items, delegate, 0, 0)
+	l := list.New(items, todoDelegate{}, 0, 0)
 	l.Title = "My Tasks"
 	l.Styles.Title = titleStyle
 	l.SetShowStatusBar(false)
