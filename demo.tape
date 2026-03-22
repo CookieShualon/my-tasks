@@ -3,6 +3,7 @@ Set TypingSpeed 75ms
 Set FontSize 22
 Set Width 1300
 Set Height 650
+Output demo.gif
 Sleep 1s
 Type "hello!"
 Sleep 1s
