@@ -2,7 +2,7 @@
 
 A terminal to-do app built with [Bubble Tea](https://github.com/charmbracelet/bubbletea), [Bubbles](https://github.com/charmbracelet/bubbles), and [Lip Gloss](https://github.com/charmbracelet/lipgloss).
 
-![demo](https://raw.githubusercontent.com/CookieShualon/my-tasks/43a055b5014e04b17fb2b34e3327b6134d644e18/demo.gif)
+![demo](https://raw.githubusercontent.com/CookieShualon/my-tasks/c9b8ecd63a5aaf22d4351e9ab106594c0ab31617/demo.gif)
 
 ## Build
 
