@@ -35,4 +35,4 @@ Type "/"
 Type "buy"
 Sleep 1.5s
 Escape
-Sleep 500ms
+Sleep 5s
