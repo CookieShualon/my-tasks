@@ -217,6 +217,15 @@ func todosToItems(ts []todo) []list.Item {
 	return items
 }
 
+func findTodoIndex(todos []todo, target todo) int {
+	for i, t := range todos {
+		if t.title == target.title && t.done == target.done {
+			return i
+		}
+	}
+	return -1
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 func (m model) Init() tea.Cmd {
@@ -262,7 +271,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if !ok {
 					break
 				}
-				idx := m.list.Index()
+				idx := findTodoIndex(m.todos, i)
+				if idx == -1 {
+					break
+				}
 				m.todos[idx].done = !i.done
 				m.list.SetItem(idx, m.todos[idx])
 				saveTodos(m.todos)
@@ -274,8 +286,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 
 			case key.Matches(msg, keys.Delete):
-				idx := m.list.Index()
 				if len(m.todos) == 0 {
+					break
+				}
+				di, ok := m.list.SelectedItem().(todo)
+				if !ok {
+					break
+				}
+				idx := findTodoIndex(m.todos, di)
+				if idx == -1 {
 					break
 				}
 				title := m.todos[idx].title
@@ -286,8 +305,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, cmd
 
 			case key.Matches(msg, keys.MoveUp):
-				idx := m.list.Index()
-				if idx == 0 {
+				ui, ok := m.list.SelectedItem().(todo)
+				if !ok {
+					break
+				}
+				idx := findTodoIndex(m.todos, ui)
+				if idx <= 0 {
 					break
 				}
 				m.todos[idx], m.todos[idx-1] = m.todos[idx-1], m.todos[idx]
@@ -298,8 +321,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, cmd
 
 			case key.Matches(msg, keys.MoveDown):
-				idx := m.list.Index()
-				if idx >= len(m.todos)-1 {
+				di2, ok := m.list.SelectedItem().(todo)
+				if !ok {
+					break
+				}
+				idx := findTodoIndex(m.todos, di2)
+				if idx == -1 || idx >= len(m.todos)-1 {
 					break
 				}
 				m.todos[idx], m.todos[idx+1] = m.todos[idx+1], m.todos[idx]
