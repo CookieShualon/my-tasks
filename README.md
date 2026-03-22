@@ -2,7 +2,7 @@
 
 A terminal to-do app built with [Bubble Tea](https://github.com/charmbracelet/bubbletea), [Bubbles](https://github.com/charmbracelet/bubbles), and [Lip Gloss](https://github.com/charmbracelet/lipgloss).
 
-![Demo](demo.gif)
+![Demo](demo.gif?v=2)
 
 ## Build
 
