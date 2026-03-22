@@ -12,14 +12,27 @@ Sleep 500ms
 Backspace 18
 Sleep 1s
 Type "./my-tasks"
+Enter
+Sleep 2s
+Type "a"
 Sleep 500ms
+Type "Buy groceries"
+Enter
+Sleep 1s
+Type "a"
+Sleep 500ms
+Type "Read a book"
 Enter
 Sleep 1.5s
 Type " "
+Sleep 1s
 Down
-Sleep 500ms
-Type " "
+Down
+Type "d"
+Sleep 1s
+Type "/"
+Type "buy"
 Sleep 1.5s
-Type "q"
+Escape
 Sleep 500ms
-
+Type "q"

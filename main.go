@@ -37,8 +37,8 @@ var (
 	doneStyle    = lipgloss.NewStyle().Strikethrough(true).Foreground(lipgloss.Color("#6B7280"))
 	pendingStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#F9FAFB"))
 
-	checkDone    = lipgloss.NewStyle().Foreground(lipgloss.Color("#10B981")).Render("✓")
-	checkPending = lipgloss.NewStyle().Foreground(lipgloss.Color("#6B7280")).Render("○")
+	checkDoneStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#10B981"))
+	checkPendingStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#6B7280"))
 
 	helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262"))
 )
@@ -99,10 +99,10 @@ type todo struct {
 }
 
 func (t todo) Title() string {
-	check := checkPending
+	check := checkPendingStyle.Render("○")
 	text := pendingStyle.Render(t.title)
 	if t.done {
-		check = checkDone
+		check = checkDoneStyle.Render("✓")
 		text = doneStyle.Render(t.title)
 	}
 	return fmt.Sprintf("%s  %s", check, text)
