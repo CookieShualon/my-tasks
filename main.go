@@ -59,20 +59,25 @@ func dataPath() string {
 	return filepath.Join(dir, "my-tasks", "tasks.json")
 }
 
+var nextID int
+
 func loadTodos() []todo {
 	data, err := os.ReadFile(dataPath())
 	if err != nil {
 		// No save file yet — return empty list
+		nextID = 1
 		return []todo{}
 	}
 	var saved []savedTodo
 	if err := json.Unmarshal(data, &saved); err != nil {
+		nextID = 1
 		return []todo{}
 	}
 	todos := make([]todo, len(saved))
 	for i, s := range saved {
-		todos[i] = todo{title: s.Title, done: s.Done}
+		todos[i] = todo{id: i + 1, title: s.Title, done: s.Done}
 	}
+	nextID = len(saved) + 1
 	return todos
 }
 
@@ -95,6 +100,7 @@ func saveTodos(todos []todo) error {
 // ── Todo item ─────────────────────────────────────────────────────────────────
 
 type todo struct {
+	id    int
 	title string
 	done  bool
 }
@@ -239,7 +245,7 @@ func todosToItems(ts []todo) []list.Item {
 
 func findTodoIndex(todos []todo, target todo) int {
 	for i, t := range todos {
-		if t.title == target.title && t.done == target.done {
+		if t.id == target.id {
 			return i
 		}
 	}
@@ -276,7 +282,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case viewList:
 			switch {
 			case key.Matches(msg, keys.Quit):
-				saveTodos(m.todos)
+				if err := saveTodos(m.todos); err != nil {
+					m.statusMsg = fmt.Sprintf("Warning: failed to save: %v", err)
+					return m, nil
+				}
 				return m, tea.Quit
 
 			case key.Matches(msg, keys.Add):
@@ -287,6 +296,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, textinput.Blink
 
 			case key.Matches(msg, keys.Toggle):
+				if len(m.todos) == 0 {
+					break
+				}
 				i, ok := m.list.SelectedItem().(todo)
 				if !ok {
 					break
@@ -297,7 +309,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.todos[idx].done = !i.done
 				m.list.SetItem(idx, m.todos[idx])
-				saveTodos(m.todos)
+				if err := saveTodos(m.todos); err != nil {
+					m.statusMsg = fmt.Sprintf("Save error: %v", err)
+					return m, nil
+				}
 				if m.todos[idx].done {
 					m.statusMsg = fmt.Sprintf("Marked \"%s\" as done", i.title)
 				} else {
@@ -320,11 +335,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				title := m.todos[idx].title
 				m.todos = append(m.todos[:idx], m.todos[idx+1:]...)
 				cmd := m.list.SetItems(todosToItems(m.todos))
-				saveTodos(m.todos)
+				if err := saveTodos(m.todos); err != nil {
+					m.statusMsg = fmt.Sprintf("Save error: %v", err)
+					return m, cmd
+				}
 				m.statusMsg = fmt.Sprintf("Deleted \"%s\"", title)
 				return m, cmd
 
 			case key.Matches(msg, keys.MoveUp):
+				if len(m.todos) == 0 {
+					break
+				}
 				ui, ok := m.list.SelectedItem().(todo)
 				if !ok {
 					break
@@ -336,11 +357,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.todos[idx], m.todos[idx-1] = m.todos[idx-1], m.todos[idx]
 				cmd := m.list.SetItems(todosToItems(m.todos))
 				m.list.Select(idx - 1)
-				saveTodos(m.todos)
+				if err := saveTodos(m.todos); err != nil {
+					m.statusMsg = fmt.Sprintf("Save error: %v", err)
+					return m, cmd
+				}
 				m.statusMsg = ""
 				return m, cmd
 
 			case key.Matches(msg, keys.MoveDown):
+				if len(m.todos) == 0 {
+					break
+				}
 				di2, ok := m.list.SelectedItem().(todo)
 				if !ok {
 					break
@@ -352,7 +379,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.todos[idx], m.todos[idx+1] = m.todos[idx+1], m.todos[idx]
 				cmd := m.list.SetItems(todosToItems(m.todos))
 				m.list.Select(idx + 1)
-				saveTodos(m.todos)
+				if err := saveTodos(m.todos); err != nil {
+					m.statusMsg = fmt.Sprintf("Save error: %v", err)
+					return m, cmd
+				}
 				m.statusMsg = ""
 				return m, cmd
 			}
@@ -363,12 +393,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "enter":
 				val := strings.TrimSpace(m.input.Value())
 				if val != "" {
-					newTodo := todo{title: val}
+					newTodo := todo{id: nextID, title: val}
+					nextID++
 					m.todos = append(m.todos, newTodo)
 					cmd := m.list.SetItems(todosToItems(m.todos))
 					m.list.Select(len(m.todos) - 1)
-					saveTodos(m.todos)
-					m.statusMsg = fmt.Sprintf("Added \"%s\"", val)
+					if err := saveTodos(m.todos); err != nil {
+						m.statusMsg = fmt.Sprintf("Save error: %v", err)
+					} else {
+						m.statusMsg = fmt.Sprintf("Added \"%s\"", val)
+					}
 					m.input.Blur()
 					m.state = viewList
 					return m, cmd
