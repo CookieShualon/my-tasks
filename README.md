@@ -27,6 +27,24 @@ go build -o my-tasks .
 ./my-tasks
 ```
 
+### Install command
+
+```sh
+./install.sh
+```
+
+This installs `my-tasks` to `~/.local/bin` by default so it can be opened from any terminal with:
+
+```sh
+my-tasks
+```
+
+To install somewhere else:
+
+```sh
+MY_TASKS_INSTALL_DIR=/usr/local/bin ./install.sh
+```
+
 ### Run without installing
 
 ```sh
