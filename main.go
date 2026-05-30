@@ -59,25 +59,20 @@ func dataPath() string {
 	return filepath.Join(dir, "my-tasks", "tasks.json")
 }
 
-var nextID int
-
 func loadTodos() []todo {
 	data, err := os.ReadFile(dataPath())
 	if err != nil {
 		// No save file yet — return empty list
-		nextID = 1
 		return []todo{}
 	}
 	var saved []savedTodo
 	if err := json.Unmarshal(data, &saved); err != nil {
-		nextID = 1
 		return []todo{}
 	}
 	todos := make([]todo, len(saved))
 	for i, s := range saved {
 		todos[i] = todo{id: i + 1, title: s.Title, done: s.Done}
 	}
-	nextID = len(saved) + 1
 	return todos
 }
 
@@ -106,7 +101,7 @@ type todo struct {
 }
 
 func (t todo) Title() string       { return t.title }
-func (t todo) Description() string { return "" }
+func (t todo) Description() string { return "" } // reserved for future use (e.g. due date, priority)
 func (t todo) FilterValue() string { return t.title }
 
 // ── Custom delegate ───────────────────────────────────────────────────────────
@@ -203,6 +198,7 @@ type model struct {
 	width     int
 	height    int
 	statusMsg string
+	nextID    int
 }
 
 func newModel() model {
@@ -232,6 +228,7 @@ func newModel() model {
 		input: ti,
 		todos: initial,
 		state: viewList,
+		nextID: len(initial) + 1,
 	}
 }
 
@@ -241,15 +238,6 @@ func todosToItems(ts []todo) []list.Item {
 		items[i] = t
 	}
 	return items
-}
-
-func findTodoIndex(todos []todo, target todo) int {
-	for i, t := range todos {
-		if t.id == target.id {
-			return i
-		}
-	}
-	return -1
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -303,10 +291,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if !ok {
 					break
 				}
-				idx := findTodoIndex(m.todos, i)
-				if idx == -1 {
-					break
-				}
+				idx := m.list.Index()
 				m.todos[idx].done = !i.done
 				m.list.SetItem(idx, m.todos[idx])
 				if err := saveTodos(m.todos); err != nil {
@@ -324,14 +309,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if len(m.todos) == 0 {
 					break
 				}
-				di, ok := m.list.SelectedItem().(todo)
-				if !ok {
-					break
-				}
-				idx := findTodoIndex(m.todos, di)
-				if idx == -1 {
-					break
-				}
+				idx := m.list.Index()
 				title := m.todos[idx].title
 				m.todos = append(m.todos[:idx], m.todos[idx+1:]...)
 				cmd := m.list.SetItems(todosToItems(m.todos))
@@ -346,11 +324,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if len(m.todos) == 0 {
 					break
 				}
-				ui, ok := m.list.SelectedItem().(todo)
-				if !ok {
-					break
-				}
-				idx := findTodoIndex(m.todos, ui)
+				idx := m.list.Index()
 				if idx <= 0 {
 					break
 				}
@@ -368,12 +342,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if len(m.todos) == 0 {
 					break
 				}
-				di2, ok := m.list.SelectedItem().(todo)
-				if !ok {
-					break
-				}
-				idx := findTodoIndex(m.todos, di2)
-				if idx == -1 || idx >= len(m.todos)-1 {
+				idx := m.list.Index()
+				if idx >= len(m.todos)-1 {
 					break
 				}
 				m.todos[idx], m.todos[idx+1] = m.todos[idx+1], m.todos[idx]
@@ -393,8 +363,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "enter":
 				val := strings.TrimSpace(m.input.Value())
 				if val != "" {
-					newTodo := todo{id: nextID, title: val}
-					nextID++
+					newTodo := todo{id: m.nextID, title: val}
+					m.nextID++
 					m.todos = append(m.todos, newTodo)
 					cmd := m.list.SetItems(todosToItems(m.todos))
 					m.list.Select(len(m.todos) - 1)
